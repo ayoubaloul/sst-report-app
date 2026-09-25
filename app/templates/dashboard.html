@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+
+{% set status_labels = {'draft': 'Brouillon', 'submitted': 'Soumis', 'approved': 'Approuvé'} %}
+{% set status_classes = {'draft': 'secondary', 'submitted': 'warning', 'approved': 'success'} %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>{% if current_user.is_director() %}Rapports soumis{% else %}Mes rapports{% endif %}</h3>
+    {% if current_user.is_sst_user() %}
+    <a href="{{ url_for('report.new_report', month=current_month) }}" class="btn btn-primary">Nouveau rapport</a>
+    {% endif %}
+</div>
+
+<table class="table table-striped table-bordered bg-white">
+    <thead>
+        <tr>
+            <th>Mois</th>
+            {% if current_user.is_director() %}
+            <th>Observateur</th>
+            {% endif %}
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for report in reports %}
+        <tr>
+            <td>{{ report.date_month }}</td>
+            {% if current_user.is_director() %}
+            <td>{{ report.author.username }}</td>
+            {% endif %}
+            <td><span class="badge bg-{{ status_classes[report.status] }}">{{ status_labels[report.status] }}</span></td>
+            <td>
+                {% if current_user.is_sst_user() %}
+                    {% if report.status == 'draft' %}
+                    <a href="{{ url_for('report.new_report', month=report.date_month) }}" class="btn btn-sm btn-outline-primary">Éditer</a>
+                    {% endif %}
+                    <a href="{{ url_for('report.view_report', month=report.date_month) }}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                {% else %}
+                    {% if report.status == 'submitted' %}
+                    <form method="POST" action="{{ url_for('report.approve_report', month=report.date_month) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_id" value="{{ report.user_id }}">
+                        <button type="submit" class="btn btn-sm btn-success">Approuver</button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('report.view_report', month=report.date_month, user=report.user_id) }}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                    {% if report.status == 'approved' %}
+                    <a href="{{ url_for('report.export_csv', month=report.date_month, user=report.user_id) }}" class="btn btn-sm btn-outline-primary">CSV</a>
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="{% if current_user.is_director() %}4{% else %}3{% endif %}" class="text-center text-muted">
+                Aucun rapport pour le moment.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

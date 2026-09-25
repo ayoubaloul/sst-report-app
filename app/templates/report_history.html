@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Historique {{ report.date_month }}{% endblock %}
+{% block content %}
+{% set action_labels = {'draft_saved': 'Brouillon enregistré', 'submitted': 'Soumis', 'approved': 'Approuvé'} %}
+{% set action_classes = {'draft_saved': 'secondary', 'submitted': 'warning', 'approved': 'success'} %}
+
+<h3 class="mb-4">Historique – Rapport {{ report.date_month }} ({{ report.author.username }})</h3>
+
+<table class="table table-bordered bg-white">
+    <thead>
+        <tr>
+            <th>Action</th>
+            <th>Utilisateur</th>
+            <th>Date / Heure</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td><span class="badge bg-{{ action_classes[log.action] }}">{{ action_labels[log.action] }}</span></td>
+            <td>{{ log.user.username }}</td>
+            <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3" class="text-center text-muted">Aucun historique.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('report.view_report', month=report.date_month, user=report.user_id if current_user.is_director() else None) }}" class="btn btn-secondary mb-5">Retour au rapport</a>
+{% endblock %}

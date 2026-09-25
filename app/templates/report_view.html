@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Rapport {{ report.date_month }}{% endblock %}
+{% block content %}
+{% set status_labels = {'draft': 'Brouillon', 'submitted': 'Soumis', 'approved': 'Approuvé'} %}
+{% set status_classes = {'draft': 'secondary', 'submitted': 'warning', 'approved': 'success'} %}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <h3 class="mb-0">Rapport de Dialogue Sécurité – {{ report.date_month }}</h3>
+    <span class="badge bg-{{ status_classes[report.status] }}">{{ status_labels[report.status] }}</span>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-2">Date</dt>
+    <dd class="col-sm-10">{{ data.date }}</dd>
+    <dt class="col-sm-2">Section</dt>
+    <dd class="col-sm-10">{{ data.section }}</dd>
+    <dt class="col-sm-2">Observateur</dt>
+    <dd class="col-sm-10">{{ data.observateur }}</dd>
+    <dt class="col-sm-2">Contexte</dt>
+    <dd class="col-sm-10">{{ data.contexte }}</dd>
+    {% if report.status == 'approved' %}
+    <dt class="col-sm-2">Approuvé par</dt>
+    <dd class="col-sm-10">{{ report.approved_by.username }} le {{ report.approved_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+    {% endif %}
+</dl>
+
+<h5 class="mt-4 mb-2">Anomalies constatées</h5>
+<table class="table table-bordered bg-white">
+    <thead>
+        <tr>
+            <th>N°</th>
+            <th>Anomalie</th>
+            <th>Type</th>
+            <th>Cause</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in data.anomalies %}
+        {% if a.anomalie %}
+        <tr>
+            <td>{{ a.n }}</td>
+            <td>{{ a.anomalie }}</td>
+            <td>{{ a.type }}</td>
+            <td>{{ a.cause }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="d-flex gap-2 mb-5">
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Retour</a>
+    <a href="{{ url_for('report.report_history', month=report.date_month, user=report.user_id if current_user.is_director() else None) }}" class="btn btn-outline-info">Historique</a>
+    {% if current_user.is_director() and report.status == 'approved' %}
+    <a href="{{ url_for('report.export_csv', month=report.date_month, user=report.user_id) }}" class="btn btn-outline-primary">Télécharger CSV</a>
+    {% endif %}
+    {% if current_user.is_director() and report.status == 'submitted' %}
+    <form method="POST" action="{{ url_for('report.approve_report', month=report.date_month) }}" class="ms-auto">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="user_id" value="{{ report.user_id }}">
+        <button type="submit" class="btn btn-success">Approuver</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

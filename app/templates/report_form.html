@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Rapport {{ month }}{% endblock %}
+{% block content %}
+<h3 class="mb-4">Rapport de Dialogue Sécurité – {{ month }}</h3>
+
+<form method="POST" id="report-form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-control" name="date" value="{{ data.date }}" required>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Section</label>
+            <input type="text" class="form-control" name="section" value="{{ data.section }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Observateur</label>
+            <input type="text" class="form-control" value="{{ data.observateur }}" readonly>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Contexte</label>
+        <textarea class="form-control" name="contexte" rows="2">{{ data.contexte }}</textarea>
+    </div>
+
+    <h5 class="mt-4 mb-2">Anomalies constatées</h5>
+    <table class="table table-bordered bg-white align-middle">
+        <thead>
+            <tr>
+                <th style="width:4%">N°</th>
+                <th style="width:40%">Anomalie</th>
+                <th style="width:28%">Type</th>
+                <th style="width:28%">Cause</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in data.anomalies %}
+            <tr>
+                <td class="text-center">{{ a.n }}</td>
+                <td>
+                    <textarea class="form-control anomalie-field" name="anomalie_{{ a.n }}" rows="2">{{ a.anomalie }}</textarea>
+                </td>
+                <td>
+                    <select class="form-select type-field" name="type_{{ a.n }}">
+                        <option value="">--</option>
+                        {% for t in anomalie_types %}
+                        <option value="{{ t }}" {% if a.type == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select cause-field" name="cause_{{ a.n }}">
+                        <option value="">--</option>
+                        {% for group, items in causes.items() %}
+                        <optgroup label="{{ group }}">
+                            {% for c in items %}
+                            <option value="{{ c }}" {% if a.cause == c %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="d-flex gap-2 mt-3 mb-5">
+        <button type="submit" formaction="{{ url_for('report.save_report', month=month) }}" class="btn btn-outline-secondary">Enregistrer brouillon</button>
+        <button type="submit" formaction="{{ url_for('report.submit_report', month=month) }}" id="submit-btn" class="btn btn-primary">Soumettre</button>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-link">Annuler</a>
+    </div>
+</form>
+{% endblock %}
